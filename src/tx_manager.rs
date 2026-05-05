@@ -339,6 +339,7 @@ mod tests {
         let tx_manager = setup_tx_manager_dispute_chargeback();
         let account = tx_manager.accounts.get(&1).unwrap();
         assert_eq!(account.available, Decimal::new(1, 4));
+        assert_eq!(account.total, Decimal::new(1, 4));
         assert_eq!(account.locked, true);
     }
 
