@@ -299,10 +299,63 @@ mod tests {
     }
 
     #[test]
+    fn test_client_fail_dispute_over_withdraw() {
+        let mut tx_manager = TxManager::new();
+        let txs = vec![
+            Transaction {
+                tx_type: TxType::Deposit,
+                account_id: 1,
+                tx_id: 1,
+                amount: Some(Decimal::new(6, 4)),
+            },
+            Transaction {
+                tx_type: TxType::Withdrawal,
+                account_id: 1,
+                tx_id: 2,
+                amount: Some(Decimal::new(2, 4)),
+            },
+            Transaction {
+                tx_type: TxType::Dispute,
+                account_id: 1,
+                tx_id: 2,
+                amount: Some(Decimal::new(2, 4)),
+            },
+        ];
+
+        for tx in txs {
+            tx_manager.process_tx(tx);
+        }
+
+        let account = tx_manager.accounts.get(&1).unwrap();
+        assert_eq!(account.available, Decimal::new(4, 4));
+        assert_eq!(account.total, Decimal::new(4, 4));
+        assert_eq!(account.locked, false);
+        assert_eq!(account.held, Decimal::new(0, 4));
+        assert_eq!(tx_manager.txs_disputed.len(), 0);
+    }
+
+    #[test]
     fn test_client_chargeback() {
         let tx_manager = setup_tx_manager_dispute_chargeback();
         let account = tx_manager.accounts.get(&1).unwrap();
         assert_eq!(account.available, Decimal::new(1, 4));
         assert_eq!(account.locked, true);
+    }
+
+    #[test]
+    fn test_fail_transaction_after_chargeback() {
+        let mut tx_manager = setup_tx_manager_dispute_chargeback();
+        let extra_tx = Transaction {
+            tx_type: TxType::Deposit,
+            account_id: 1,
+            tx_id: 3,
+            amount: Some(Decimal::new(20, 4)),
+        };
+
+        tx_manager.process_tx(extra_tx);
+
+        let account = tx_manager.accounts.get(&1).unwrap();
+        assert_eq!(account.locked, true);
+        assert_eq!(account.available, Decimal::new(1, 4));
     }
 }
