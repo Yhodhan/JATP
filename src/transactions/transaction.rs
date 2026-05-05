@@ -16,7 +16,7 @@ pub struct Transaction {
     pub amount: Option<Decimal>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum TxType {
     Deposit,

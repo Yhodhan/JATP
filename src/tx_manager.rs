@@ -8,6 +8,7 @@ use crate::transactions::transaction::TxType;
 pub struct TxManager {
     pub accounts: HashMap<u16, Account>,
     pub transactions: HashMap<u32, Transaction>,
+    pub txs_disputed: HashMap<u32, Transaction>,
 }
 
 impl TxManager {
@@ -15,13 +16,11 @@ impl TxManager {
         TxManager {
             accounts: HashMap::new(),
             transactions: HashMap::new(),
+            txs_disputed: HashMap::new(),
         }
     }
 
     pub fn process_tx(&mut self, tx: Transaction) {
-        // store transaction in the map
-        self.transactions.insert(tx.tx_id, tx.clone());
-
         match tx.tx_type {
             TxType::Deposit => self.handle_deposit(&tx),
             TxType::Withdrawal => self.handle_withdrawal(&tx),
@@ -32,6 +31,9 @@ impl TxManager {
     }
 
     pub fn handle_deposit(&mut self, tx: &Transaction) {
+        // store transaction in the map
+        self.transactions.insert(tx.tx_id, tx.clone());
+
         let acc_id = tx.account_id;
         let mut account = self.check_account(acc_id);
         let amount = tx.amount.unwrap_or(Decimal::new(0, 4));
@@ -48,6 +50,9 @@ impl TxManager {
     }
 
     pub fn handle_withdrawal(&mut self, tx: &Transaction) {
+        // store transaction in the map
+        self.transactions.insert(tx.tx_id, tx.clone());
+
         let acc_id = tx.account_id;
         let mut account = self.check_account(acc_id);
         let amount = tx.amount.unwrap_or(Decimal::new(0, 4));
@@ -81,14 +86,54 @@ impl TxManager {
                 account.available -= amount;
                 account.held += amount;
                 self.accounts.insert(acc_id, account);
+                self.txs_disputed.insert(t.tx_id, t.clone());
             }
         }
     }
 
-    pub fn handle_resolve(&mut self, tx: &Transaction) {}
+    pub fn handle_resolve(&mut self, tx: &Transaction) {
+        let acc_id = tx.account_id;
+        let mut account = self.check_account(acc_id);
 
-    pub fn handle_chargeback(&mut self, tx: &Transaction) {}
+        if account.locked {
+            return;
+        }
 
+        // check that it is a disputed transaction
+        let tx_id = tx.tx_id;
+        if self.txs_disputed.contains_key(&tx_id) {
+            let tx_disputed = self.txs_disputed.get(&tx_id).unwrap();
+
+            let amount = tx_disputed.amount.unwrap();
+            account.available += amount;
+            account.held -= amount;
+            self.accounts.insert(acc_id, account);
+            self.txs_disputed.remove(&tx_id);
+        }
+    }
+
+    pub fn handle_chargeback(&mut self, tx: &Transaction) {
+        let acc_id = tx.account_id;
+        let mut account = self.check_account(acc_id);
+
+        if account.locked {
+            return;
+        }
+
+        let tx_id = tx.tx_id;
+        if self.txs_disputed.contains_key(&tx_id) {
+            let tx_disputed = self.txs_disputed.get(&tx_id).unwrap();
+
+            let amount = tx_disputed.amount.unwrap();
+            account.held -= amount;
+            account.total -= amount;
+            account.locked = true;
+            self.accounts.insert(acc_id, account);
+            self.txs_disputed.remove(&tx_id);
+        }
+    }
+
+    // check an account or create it missing
     fn check_account(&mut self, acc_id: u16) -> Account {
         let account = self.accounts.get(&acc_id);
         match account {
