@@ -21,8 +21,12 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    for (_id, acc) in tx_manager.accounts {
-        println!("acc {:?}", acc);
+    println!("client, available, held, total, locked");
+    for account in tx_manager.accounts.values() {
+        println!(
+            "{}, {:.4}, {:.4}, {:.4}, {}",
+            account.id, account.available, account.held, account.total, account.locked
+        );
     }
 
     Ok(())
