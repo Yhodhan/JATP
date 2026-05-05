@@ -64,7 +64,26 @@ impl TxManager {
         self.accounts.insert(acc_id, account);
     }
 
-    pub fn handle_dispute(&mut self, tx: &Transaction) {}
+    pub fn handle_dispute(&mut self, tx: &Transaction) {
+        let acc_id = tx.account_id;
+        let mut account = self.check_account(acc_id);
+
+        if account.locked {
+            return;
+        }
+
+        // obtain disputed transaction
+        let tx_disputed = self.transactions.get(&tx.tx_id);
+        match tx_disputed {
+            None => (),
+            Some(t) => {
+                let amount = t.amount.unwrap();
+                account.available -= amount;
+                account.held += amount;
+                self.accounts.insert(acc_id, account);
+            }
+        }
+    }
 
     pub fn handle_resolve(&mut self, tx: &Transaction) {}
 
