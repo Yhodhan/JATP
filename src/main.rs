@@ -21,5 +21,9 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
+    for (_id, acc) in tx_manager.accounts {
+        println!("acc {:?}", acc);
+    }
+
     Ok(())
 }

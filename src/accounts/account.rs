@@ -1,5 +1,5 @@
 use rust_decimal::Decimal;
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Account {
     pub id: u16,
     pub held: Decimal,

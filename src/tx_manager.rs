@@ -78,17 +78,22 @@ impl TxManager {
         }
 
         // obtain disputed transaction
-        let tx_disputed = self.transactions.get(&tx.tx_id);
-        match tx_disputed {
-            None => (),
-            Some(t) => {
-                let amount = t.amount.unwrap();
-                account.available -= amount;
-                account.held += amount;
-                self.accounts.insert(acc_id, account);
-                self.txs_disputed.insert(t.tx_id, t.clone());
-            }
+        let tx_disputed = match self.transactions.get(&tx.tx_id) {
+            None => return,
+            Some(t) => t,
+        };
+
+        if tx_disputed.tx_type != TxType::Deposit {
+            return;
         }
+
+        let amount = tx_disputed.amount.unwrap();
+        account.available -= amount;
+        account.held += amount;
+        self.accounts.insert(acc_id, account);
+
+        self.txs_disputed
+            .insert(tx_disputed.tx_id, tx_disputed.clone());
     }
 
     pub fn handle_resolve(&mut self, tx: &Transaction) {
@@ -122,6 +127,7 @@ impl TxManager {
 
         let tx_id = tx.tx_id;
         if self.txs_disputed.contains_key(&tx_id) {
+            // unwrap is okay since the transaction is known to be stored
             let tx_disputed = self.txs_disputed.get(&tx_id).unwrap();
 
             let amount = tx_disputed.amount.unwrap();
