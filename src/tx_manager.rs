@@ -148,3 +148,161 @@ impl TxManager {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn setup_tx_manager() -> TxManager {
+        let mut tx_manager = TxManager::new();
+
+        let txs = vec![
+            Transaction {
+                tx_type: TxType::Deposit,
+                account_id: 1,
+                tx_id: 1,
+                amount: Some(Decimal::new(1, 4)),
+            },
+            Transaction {
+                tx_type: TxType::Deposit,
+                account_id: 2,
+                tx_id: 2,
+                amount: Some(Decimal::new(2, 4)),
+            },
+            Transaction {
+                tx_type: TxType::Deposit,
+                account_id: 1,
+                tx_id: 3,
+                amount: Some(Decimal::new(20, 4)),
+            },
+            Transaction {
+                tx_type: TxType::Withdrawal,
+                account_id: 1,
+                tx_id: 4,
+                amount: Some(Decimal::new(1, 4)),
+            },
+            Transaction {
+                tx_type: TxType::Withdrawal,
+                account_id: 2,
+                tx_id: 5,
+                amount: Some(Decimal::new(3, 4)),
+            },
+        ];
+
+        for tx in txs {
+            tx_manager.process_tx(tx);
+        }
+
+        tx_manager
+    }
+
+    fn setup_tx_manager_dispute_resolution() -> TxManager {
+        let mut tx_manager = TxManager::new();
+
+        let txs = vec![
+            Transaction {
+                tx_type: TxType::Deposit,
+                account_id: 1,
+                tx_id: 1,
+                amount: Some(Decimal::new(1, 4)),
+            },
+            Transaction {
+                tx_type: TxType::Deposit,
+                account_id: 1,
+                tx_id: 2,
+                amount: Some(Decimal::new(2, 4)),
+            },
+            Transaction {
+                tx_type: TxType::Dispute,
+                account_id: 1,
+                tx_id: 1,
+                amount: None,
+            },
+            Transaction {
+                tx_type: TxType::Resolve,
+                account_id: 1,
+                tx_id: 1,
+                amount: None,
+            },
+        ];
+
+        for tx in txs {
+            tx_manager.process_tx(tx);
+        }
+
+        tx_manager
+    }
+
+    fn setup_tx_manager_dispute_chargeback() -> TxManager {
+        let mut tx_manager = TxManager::new();
+
+        let txs = vec![
+            Transaction {
+                tx_type: TxType::Deposit,
+                account_id: 1,
+                tx_id: 1,
+                amount: Some(Decimal::new(1, 4)),
+            },
+            Transaction {
+                tx_type: TxType::Deposit,
+                account_id: 1,
+                tx_id: 2,
+                amount: Some(Decimal::new(2, 4)),
+            },
+            Transaction {
+                tx_type: TxType::Dispute,
+                account_id: 1,
+                tx_id: 2,
+                amount: None,
+            },
+            Transaction {
+                tx_type: TxType::ChargeBack,
+                account_id: 1,
+                tx_id: 2,
+                amount: None,
+            },
+        ];
+
+        for tx in txs {
+            tx_manager.process_tx(tx);
+        }
+
+        tx_manager
+    }
+
+    #[test]
+    fn test_client1_available_held_total() {
+        let tx_manager = setup_tx_manager();
+        let account = tx_manager.accounts.get(&1).unwrap();
+        assert_eq!(account.available, Decimal::new(20, 4));
+        assert_eq!(account.held, Decimal::new(0, 4));
+        assert_eq!(account.total, Decimal::new(20, 4));
+    }
+
+    #[test]
+    fn test_client2_insufficient_funds() {
+        let tx_manager = setup_tx_manager();
+        let account = tx_manager.accounts.get(&2).unwrap();
+        // withdrawal of 3.0 should fail, available stays at 2.0
+        assert_eq!(account.available, Decimal::new(2, 4));
+    }
+
+    // ----------------------
+    //     Dispute tests
+    // ----------------------
+
+    #[test]
+    fn test_client_resolution() {
+        let tx_manager = setup_tx_manager_dispute_resolution();
+        let account = tx_manager.accounts.get(&1).unwrap();
+        assert_eq!(account.available, Decimal::new(3, 4));
+    }
+
+    #[test]
+    fn test_client_chargeback() {
+        let tx_manager = setup_tx_manager_dispute_chargeback();
+        let account = tx_manager.accounts.get(&1).unwrap();
+        assert_eq!(account.available, Decimal::new(1, 4));
+        assert_eq!(account.locked, true);
+    }
+}
