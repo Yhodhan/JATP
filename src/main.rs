@@ -17,7 +17,7 @@ fn main() -> anyhow::Result<()> {
     for tx in rdr.deserialize::<Transaction>() {
         match tx {
             Ok(t) => tx_manager.process_tx(t),
-            Err(_) => unimplemented!(),
+            Err(e) => eprintln!("skipping invalid tx: {}", e),
         }
     }
 

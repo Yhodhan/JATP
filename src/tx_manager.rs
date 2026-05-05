@@ -36,6 +36,8 @@ impl TxManager {
 
         let acc_id = tx.account_id;
         let mut account = self.check_account(acc_id);
+
+        // If Tx was missing the value then we just add 0.
         let amount = tx.amount.unwrap_or(Decimal::new(0, 4));
 
         // If the account is locked is not allowed to operate
@@ -55,6 +57,8 @@ impl TxManager {
 
         let acc_id = tx.account_id;
         let mut account = self.check_account(acc_id);
+
+        // If Tx was missing the value then we just add 0.
         let amount = tx.amount.unwrap_or(Decimal::new(0, 4));
 
         // If the account is locked is not allowed to operate
