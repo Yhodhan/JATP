@@ -20,6 +20,6 @@ fn main() -> anyhow::Result<()> {
             Err(_) => unimplemented!(),
         }
     }
-    
+
     Ok(())
 }

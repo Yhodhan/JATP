@@ -34,21 +34,35 @@ impl TxManager {
     pub fn handle_deposit(&mut self, tx: &Transaction) {
         let acc_id = tx.account_id;
         let mut account = self.check_account(acc_id);
+        let amount = tx.amount.unwrap_or(Decimal::new(0, 4));
 
         // If the account is locked is not allowed to operate
         if account.locked {
             return;
         }
 
-        let amount = tx.amount.unwrap_or(Decimal::new(0, 4));
         account.available += amount;
         account.total += amount;
-
         // store the updated account
         self.accounts.insert(acc_id, account);
     }
 
-    pub fn handle_withdrawal(&mut self, tx: &Transaction) {}
+    pub fn handle_withdrawal(&mut self, tx: &Transaction) {
+        let acc_id = tx.account_id;
+        let mut account = self.check_account(acc_id);
+        let amount = tx.amount.unwrap_or(Decimal::new(0, 4));
+
+        // If the account is locked is not allowed to operate
+        // Or the amount to withdraw is larger than the total funds
+        if account.locked || account.available < amount {
+            return;
+        }
+
+        account.available -= amount;
+        account.total -= amount;
+        // store the updated account
+        self.accounts.insert(acc_id, account);
+    }
 
     pub fn handle_dispute(&mut self, tx: &Transaction) {}
 
@@ -57,7 +71,7 @@ impl TxManager {
     pub fn handle_chargeback(&mut self, tx: &Transaction) {}
 
     fn check_account(&mut self, acc_id: u16) -> Account {
-        let account = self.accounts.get(&acc_id); 
+        let account = self.accounts.get(&acc_id);
         match account {
             None => Account::new(acc_id),
             Some(acc) => acc.clone(),
