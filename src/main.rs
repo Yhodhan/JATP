@@ -1,5 +1,3 @@
-use core::panic;
-
 use clap::Parser;
 use csv::Reader;
 use jatp::transactions::transaction::Transaction;
@@ -13,16 +11,15 @@ struct Cli {
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
-    let _manager = TxManager::new();
-
+    let mut tx_manager = TxManager::new();
     let mut rdr = Reader::from_path(&cli.file)?;
 
-    for item in rdr.deserialize::<Transaction>() {
-        match item {
-            Ok(tx) => println!("{:?}", tx),
-            Err(e) => println!("oh no an invalid tx {:?}", e),
+    for tx in rdr.deserialize::<Transaction>() {
+        match tx {
+            Ok(t) => tx_manager.process_tx(t),
+            Err(_) => unimplemented!(),
         }
     }
-
+    
     Ok(())
 }
