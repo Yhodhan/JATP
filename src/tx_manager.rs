@@ -92,6 +92,12 @@ impl TxManager {
         }
 
         let amount = tx_disputed.amount.unwrap();
+
+        // avoid negative available
+        if account.available < amount {
+            return;
+        }
+
         account.available -= amount;
         account.held += amount;
         self.accounts.insert(acc_id, account);
