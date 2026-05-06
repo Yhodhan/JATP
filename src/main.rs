@@ -4,8 +4,8 @@ use jatp::transactions::transaction::Transaction;
 use jatp::tx_manager::TxManager;
 
 #[derive(Parser)]
+#[command(name = "tx-processor")]
 struct Cli {
-    #[arg(short, long)]
     file: String,
 }
 
