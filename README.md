@@ -57,6 +57,13 @@ execute unit testing with:
 cargo test
 ```
 
+The datasets were generated at random using claude and also asked to prompt the expected results. The datasets can be run for example with:
+
+```bash
+cargo run -- test_csvs/dataset1.csv
+```
+
+
 ## Notes on the use of AI 
 
-Most of the code has been handwritten but the parsing part of the CSV files and the initial setup of tests and datasets were also created with Claude to speed the process of writing the boiler plate.
+Most of the code has been handwritten but the parsing part of the CSV files and the initial setup of tests and and as mentioned before datasets were also created with Claude to speed the process of writing the boiler plate.
