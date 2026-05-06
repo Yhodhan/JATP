@@ -63,6 +63,12 @@ The datasets were generated at random using claude and also asked to prompt the 
 cargo run -- test_csvs/dataset1.csv
 ```
 
+datasets test the following workflows: 
+
+- **dataset1.csv** — dispute and resolve flow. Tests a full dispute - resolve cycle, an unresolved dispute leaving funds in held, and a dispute rejected due to insufficient available balance.
+- **dataset2.csv** — chargeback and locking. Tests a full dispute - chargeback cycle that locks an account, a rejected withdrawal due to insufficient funds, and a dispute - resolve cycle.
+- **dataset3.csv** — mixed full lifecycle across 5 clients. Tests dispute - resolve, dispute - chargeback with account locking, a partial client with only 2 transactions.
+- **dataset4.csv** — minimal baseline. Two clients, 5 transactions. Tests basic deposit accumulation and a rejected withdrawal due to insufficient funds.
 
 ## Notes on the use of AI 
 
